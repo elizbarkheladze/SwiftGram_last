@@ -45,4 +45,42 @@ struct UserPostService {
             completion(userPosts)
         }
     }
+    
+    static func postLiked(userPost: UserPost, completion : @escaping(Error?) -> Void) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        COLLECTION_POSTS.document(userPost.postID).updateData(["like": userPost.like + 1])
+        
+        COLLECTION_POSTS.document(userPost.postID).collection("postLikes").document(uid).setData([:]) { error in
+            COLLECTION_USERS.document(uid).collection("userLikedPosts").document(userPost.postID).setData([:], completion: completion)
+        }
+        
+    }
+    
+    static func hasUserLikedPost(userPost: UserPost, completion: @escaping(Bool) -> Void){
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        COLLECTION_USERS.document(uid).collection("userLikedPosts").document(userPost.postID).getDocument { snapshot, error in
+            if let error = error {
+                print("KAKA  \(error.localizedDescription)")
+            }
+            guard let isLiked = snapshot?.exists else {return}
+            completion(isLiked)
+        }
+        
+        
+    }
+    
+    
+    static func postUnliked(userPost: UserPost, completion : @escaping(Error?) -> Void) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        guard userPost.like > 0 else {return}
+        
+        COLLECTION_POSTS.document(userPost.postID).updateData(["like": userPost.like - 1])
+        
+        COLLECTION_POSTS.document(userPost.postID).collection("postLikes").document(uid).delete { error in
+            COLLECTION_USERS.document(uid).collection("userLikedPosts").document(userPost.postID).delete(completion: completion)
+        }
+    }
 }

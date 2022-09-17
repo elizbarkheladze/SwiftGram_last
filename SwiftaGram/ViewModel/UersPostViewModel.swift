@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import UIKit
 
 
 struct UersPostViewModel {
-     let userpost: UserPost
+     var userpost: UserPost
     
     var imageUrl: URL? {
         return URL(string: userpost.imageUrl)
@@ -26,9 +27,21 @@ struct UersPostViewModel {
     var publishersUsername : String {
         return userpost.ownerUsername
     }
-    
+
     var likes: Int {
         return userpost.like
+    }
+    
+    var likesLabelText: String {
+        return "\(userpost.like) likes"
+    }
+    
+    var likeBtnColor : UIColor {
+        return userpost.didLike ? .red : .black
+    }
+    var likeBtnImg : UIImage {
+        let imageAddress = userpost.didLike ? "like_selected" : "like_unselected"
+        return UIImage(named: imageAddress)!
     }
     
     init(userpost: UserPost) {

@@ -50,6 +50,8 @@ struct UserService {
         }
     }
     
+    
+    
     static func fetchStatsofUser(uid: String, completion: @escaping(StatsofUser) -> Void) {
         COLLECTION_FOLLOWERS.document(uid).collection("user-followers").getDocuments { (snapshot, error) in
             let followers = snapshot?.documents.count ?? 0

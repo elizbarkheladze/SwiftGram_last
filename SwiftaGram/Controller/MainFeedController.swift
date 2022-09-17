@@ -20,6 +20,7 @@ class MainFeedController: UICollectionViewController {
         configureUI()
         fetchPosts()
         
+        
     }
     //MARK: - API
     
@@ -28,7 +29,20 @@ class MainFeedController: UICollectionViewController {
         UserPostService.fetchPosts { posts in
             self.usersPosts = posts
             self.collectionView.refreshControl?.endRefreshing()
+            self.isPostLiked()
             self.collectionView.reloadData()
+        }
+    }
+    
+    func isPostLiked() {
+        self.usersPosts.forEach{ userPost in
+            UserPostService.hasUserLikedPost(userPost: userPost) { liked in
+                if let index = self.usersPosts.firstIndex(where: {$0.postID  == userPost.postID}) {
+                    self.usersPosts[index].didLike = liked
+                    print("KAKA : \(liked)")
+                    self.collectionView.reloadData()
+                }
+            }
         }
     }
     
@@ -98,6 +112,36 @@ extension MainFeedController: UICollectionViewDelegateFlowLayout {
 }
 
 extension MainFeedController : MainFeedCellDelegate {
+    func profileTapped(_ cell: MainFeedCell, uid: String) {
+        UserService.fetchUser(uid: uid) { user in
+            let vc = UserProfileController(user: user)
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
+    }
+    
+    func postLikeTapped(_ cell: MainFeedCell, userPost: UserPost) {
+        guard let tabBarCont = self.tabBarController as? TabBarController else {return}
+        guard let user = tabBarCont.user else {return}
+        
+        cell.viewModel?.userpost.didLike.toggle()
+        if userPost.didLike {
+            UserPostService.postUnliked(userPost: userPost) { error in
+                cell.likeBtn.setImage(UIImage(imageLiteralResourceName: "like_unselected"), for: .normal)
+                cell.likeBtn.tintColor = .black
+                cell.viewModel?.userpost.like = userPost.like - 1
+            }
+            
+        }else {
+            UserPostService.postLiked(userPost: userPost) { error in
+                cell.likeBtn.setImage(UIImage(imageLiteralResourceName: "like_selected"), for: .normal)
+                cell.likeBtn.tintColor = .red
+                cell.viewModel?.userpost.like = userPost.like + 1
+                
+                UserNotificationsService.sendUserNotification(uid: userPost.publisherID,user: user, type: .liked, userPost: userPost)
+            }
+        }
+    }
+    
     func tappedCommentsOnCell(_ cell: MainFeedCell, userPost: UserPost) {
         let vc = CommentsController(userPost: userPost)
         navigationController?.pushViewController(vc, animated: true)
