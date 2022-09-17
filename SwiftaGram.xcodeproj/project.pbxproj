@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D17F31128D5668400760A0E /* naksdnakd.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D17F31028D5668400760A0E /* naksdnakd.swift */; };
 		2D1CD78F28C8DB2000E0D27B /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1CD78E28C8DB2000E0D27B /* UserService.swift */; };
 		2D1CD79128C8DB5700E0D27B /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1CD79028C8DB5700E0D27B /* Constant.swift */; };
 		2D1CD79328C8DCB700E0D27B /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1CD79228C8DCB700E0D27B /* UserModel.swift */; };
@@ -55,6 +56,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2D17F31028D5668400760A0E /* naksdnakd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = naksdnakd.swift; sourceTree = "<group>"; };
 		2D1CD78E28C8DB2000E0D27B /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
 		2D1CD79028C8DB5700E0D27B /* Constant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
 		2D1CD79228C8DCB700E0D27B /* UserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModel.swift; sourceTree = "<group>"; };
@@ -126,6 +128,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		2D17F30F28D5667800760A0E /* kk */ = {
+			isa = PBXGroup;
+			children = (
+				2D17F31028D5668400760A0E /* naksdnakd.swift */,
+			);
+			path = kk;
+			sourceTree = "<group>";
+		};
 		2D357D4428C8C13B00C8B4B4 /* UserProfilePage */ = {
 			isa = PBXGroup;
 			children = (
@@ -156,6 +166,7 @@
 		2D5120B528C62A2B000D23A8 /* SwiftaGram */ = {
 			isa = PBXGroup;
 			children = (
+				2D17F30F28D5667800760A0E /* kk */,
 				2D5120CF28C62BD4000D23A8 /* Utility */,
 				2D5120CE28C62BCB000D23A8 /* API */,
 				2D5120CD28C62BC3000D23A8 /* Controller */,
@@ -408,6 +419,7 @@
 				2DB80CBB28C7A2C100DD43D9 /* PhotoUpload.swift in Sources */,
 				2D1CD79128C8DB5700E0D27B /* Constant.swift in Sources */,
 				2D49DF1A28D21F60006BFA11 /* CommentsCell.swift in Sources */,
+				2D17F31128D5668400760A0E /* naksdnakd.swift in Sources */,
 				2DC8760328CA60C600FFBC70 /* PostCreationController.swift in Sources */,
 				2D5120B928C62A2B000D23A8 /* SceneDelegate.swift in Sources */,
 				2D5120DF28C63874000D23A8 /* MainFeedCell.swift in Sources */,

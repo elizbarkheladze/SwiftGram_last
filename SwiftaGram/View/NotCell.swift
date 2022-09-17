@@ -78,7 +78,7 @@ class NotCell : UITableViewCell {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+    //asdjajda
     @objc func followBtnTapped() {
         
     }
