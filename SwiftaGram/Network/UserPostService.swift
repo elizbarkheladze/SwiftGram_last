@@ -18,7 +18,19 @@ struct UserPostService {
         PhotoUploader.uploadPhoto(image: picture) { url in
             let data = ["text": text , "time": Timestamp(date: Date()),"like" : 0,"imageUrl" : url,"publisherID" : uid,"ownerImageUrl" : user.profileImageUrl,"ownerUsername" : user.username] as [String : Any]
             
-            COLLECTION_POSTS.addDocument(data: data, completion: completion)
+            
+            
+            let doc = COLLECTION_POSTS.addDocument(data: data, completion: completion)
+            
+            self.updatePostsAfterNewPost(postID: doc.documentID)
+        }
+    }
+    static func fetchSinglePost(postID: String,completion : @escaping(UserPost) -> Void) {
+        COLLECTION_POSTS.document(postID).getDocument { snapshot, error in
+            guard let snapshot = snapshot else { return }
+            guard let data = snapshot.data() else { return }
+            let userPost = UserPost(postID: snapshot.documentID, dictionaty: data)
+            completion(userPost)
         }
     }
     
@@ -31,6 +43,53 @@ struct UserPostService {
         }
     }
     
+    static func updatePostsAfterFollow(user: User,followIndicator: Bool) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let query = COLLECTION_POSTS.whereField("publisherID", isEqualTo: user.uid)
+        query.getDocuments { snapshot, error in
+            guard let docs = snapshot?.documents else { return }
+            let docIDs = docs.map{$0.documentID}
+            docIDs.forEach { docID in
+                if followIndicator {
+                    COLLECTION_USERS.document(uid).collection("usersFeed").document(docID).setData([:])
+                } else {
+                    COLLECTION_USERS.document(uid).collection("usersFeed").document(docID).delete()
+                }
+                
+            }
+        }
+    }
+    
+    private static func updatePostsAfterNewPost(postID: String) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        COLLECTION_FOLLOWERS.document(uid).collection("user-followers").getDocuments { snapshot, error in
+            guard let docs = snapshot?.documents else { return }
+            
+            docs.forEach { doc in
+                COLLECTION_USERS.document(doc.documentID).collection("usersFeed").document(postID).setData([:])
+            }
+        }
+    }
+    
+    static func fetchPostsForFeed(completion: @escaping([UserPost]) -> Void) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        COLLECTION_USERS.document(uid).collection("usersFeed").getDocuments { snapshot, error in
+            var userPosts = [UserPost]()
+            snapshot?.documents.forEach({ doc in
+                fetchSinglePost(postID: doc.documentID) { userPost in
+                    userPosts.append(userPost)
+                    
+                    userPosts.sort(by: {$0.time.seconds > $1.time.seconds})
+    
+                    completion(userPosts)
+                }
+                
+            })
+        }
+    }
+    
     static func fetchPostsForProfile(uid: String, completion: @escaping([UserPost]) -> Void) {
         let filtered = COLLECTION_POSTS.whereField("publisherID",isEqualTo: uid)
         
@@ -39,9 +98,8 @@ struct UserPostService {
             
             var userPosts = docs.map({UserPost(postID: $0.documentID, dictionaty: $0.data())})
             
-            userPosts.sort{(userPost,userPost2) -> Bool in
-                return userPost.time.seconds > userPost2.time.seconds
-            }
+            userPosts.sort(by: {$0.time.seconds > $1.time.seconds})
+            
             completion(userPosts)
         }
     }

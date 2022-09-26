@@ -56,15 +56,17 @@ class CommentsController: UICollectionViewController {
     
     func configureUI() {
         collectionView.register(CommentsCell.self, forCellWithReuseIdentifier: identifier)
-        collectionView.backgroundColor = .white
+        collectionView.backgroundColor = .black
         collectionView.keyboardDismissMode = .interactive
-        collectionView.alwaysBounceVertical = true 
+        collectionView.alwaysBounceVertical = true
+        
+        navigationItem.title = "COMMENTS"
     }
     
     func fetchComments() {
-        UserCommentsService.fetchComments(postID: userPost.postID) { userComments in
-            self.userComments = userComments
-            self.collectionView.reloadData()
+        UserCommentsService.fetchComments(postID: userPost.postID) {[weak self] userComments in
+            self?.userComments = userComments
+            self?.collectionView.reloadData()
         }
     }
 }
@@ -79,6 +81,7 @@ extension CommentsController: UICollectionViewDelegateFlowLayout {
     }
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: identifier, for: indexPath) as! CommentsCell
+        cell.backgroundColor = .black
         cell.viewModel = UserCommentsViewModel(userComment: userComments[indexPath.row])
         return cell
     }
@@ -96,10 +99,11 @@ extension CommentsController : CommentInputViewDelegate {
        
         
         guard let tabBarCont = self.tabBarController as? TabBarController else {return}
-        guard let user = tabBarCont.user else {return}
+        guard let loggedInUser = tabBarCont.user else {return}
         
-        UserCommentsService.publishComment(commentText: uploadComment, userPostID: userPost.postID, user: user) { error in
+        UserCommentsService.publishComment(commentText: uploadComment, userPostID: userPost.postID, user: loggedInUser) { error in
             commentInputView.deleteCommentTxt()
+            UserNotificationsService.sendUserNotification(uid: self.userPost.publisherID, user: loggedInUser, type: .commented, userPost: self.userPost)
         }
     }
 }
@@ -107,9 +111,9 @@ extension CommentsController : CommentInputViewDelegate {
 extension CommentsController {
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let uid = userComments[indexPath.row].uid
-        UserService.fetchUser(uid: uid) { user in
+        UserService.fetchUser(uid: uid) {[weak self] user in
             let vc = UserProfileController(user: user)
-            self.navigationController?.pushViewController(vc, animated: true)
+            self?.navigationController?.pushViewController(vc, animated: true)
         }
         
     }

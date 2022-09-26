@@ -36,6 +36,8 @@ class PostCreationController : UIViewController {
     private lazy var postTxtContent : NewTextView = {
         let textView = NewTextView()
         textView.placeHolderText = "Enter Text ..."
+        textView.backgroundColor = .gray
+        textView.textColor = .white
         textView.font = UIFont.systemFont(ofSize: 16)
         textView.delegate = self
         textView.placeHolderCenter = false
@@ -70,21 +72,22 @@ class PostCreationController : UIViewController {
         }
 
         showIndicator(true)
-        UserPostService.publishPost(text: textContent, picture: image,user: user) { error in
-            self.showIndicator(false)
+        UserPostService.publishPost(text: textContent, picture: image,user: user) {[weak self] error in
+            self?.showIndicator(false)
             if let error = error {
                 print("KAKA : failed \(error.localizedDescription)")
                 return
             }
-            self.delegate?.userPublishedPost(self)
+            self?.delegate?.userPublishedPost(self!)
         }
     }
     
     //MARK: - Helpers
     
     func uiConfigutarion() {
-        view.backgroundColor = .white
+        view.backgroundColor = .black
         navigationItem.title = "Post"
+        navigationController?.navigationBar.barTintColor = UIColor.black
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelTapped))
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Publish", style: .done, target: self, action: #selector(publisheTapped))
@@ -101,6 +104,7 @@ class PostCreationController : UIViewController {
         
         view.addSubview(wordsCountLbl)
         wordsCountLbl.anchor(top:postTxtContent.bottomAnchor,right: view.rightAnchor,paddingTop: 12,paddingRight: 12)
+        
     }
     
     func checkTextWordCount(_ textView: UITextView) {

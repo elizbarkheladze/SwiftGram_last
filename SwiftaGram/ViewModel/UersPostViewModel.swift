@@ -27,6 +27,14 @@ struct UersPostViewModel {
     var publishersUsername : String {
         return userpost.ownerUsername
     }
+    
+    var timeString: String? {
+        let format = DateComponentsFormatter()
+        format.allowedUnits = [.second, .minute, .hour, .day]
+        format.maximumUnitCount = 1
+        format.unitsStyle = .abbreviated
+        return format.string(from: userpost.time.dateValue(),to: Date())
+    }
 
     var likes: Int {
         return userpost.like

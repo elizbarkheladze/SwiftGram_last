@@ -8,7 +8,6 @@
 import Foundation
 import UIKit
 
-
 class NewTextView: UITextView {
     //MARK: - Properties
     var placeHolderText : String? {
@@ -16,7 +15,6 @@ class NewTextView: UITextView {
             placeHolderLbl.text = placeHolderText
         }
     }
-    
     
      let placeHolderLbl: UILabel = {
         let label = UILabel()

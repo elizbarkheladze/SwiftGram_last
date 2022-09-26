@@ -7,44 +7,71 @@
 
 import UIKit
 import Firebase
+import YPImagePicker
 
 private let reuseIdentifier = "Cell"
 
 class MainFeedController: UICollectionViewController {
     
     private var  usersPosts = [UserPost]()
-     var userPost: UserPost?
+    var userPost: UserPost? {
+        didSet {
+            collectionView.reloadData()
+        }
+    }
+    
+    private var user : User?
+    
+    private let refresh = UIRefreshControl()
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
+        fetchUser()
         fetchPosts()
         
-        
+        if userPost != nil {
+            isPostLiked()
+        }
     }
     //MARK: - API
+    func fetchUser() {
+        guard let uid = Auth.auth().currentUser?.uid else {return}
+        UserService.fetchUser(uid: uid) {[weak self] user in
+            self?.user = user
+        }
+    }
     
     func fetchPosts(){
         guard  userPost == nil else  { return }
-        UserPostService.fetchPosts { posts in
-            self.usersPosts = posts
-            self.collectionView.refreshControl?.endRefreshing()
-            self.isPostLiked()
-            self.collectionView.reloadData()
+        
+        UserPostService.fetchPostsForFeed {[weak self] userPosts in
+            self?.usersPosts = userPosts
+
+            self?.isPostLiked()
+            self?.collectionView.reloadData()
         }
     }
     
     func isPostLiked() {
-        self.usersPosts.forEach{ userPost in
-            UserPostService.hasUserLikedPost(userPost: userPost) { liked in
-                if let index = self.usersPosts.firstIndex(where: {$0.postID  == userPost.postID}) {
-                    self.usersPosts[index].didLike = liked
-                    print("KAKA : \(liked)")
-                    self.collectionView.reloadData()
+        if let userPost = userPost {
+            UserPostService.hasUserLikedPost(userPost: userPost) {[weak self] isLiked in
+                self?.userPost?.didLike = isLiked
+            }
+        } else {
+            self.usersPosts.forEach{[weak self] userPost in
+                UserPostService.hasUserLikedPost(userPost: userPost) {[weak self] liked in
+                    if let index = self?.usersPosts.firstIndex(where: {$0.postID  == userPost.postID}) {
+                        self?.usersPosts[index].didLike = liked
+                        print("KAKA : \(liked)")
+                        self?.collectionView.reloadData()
+                    }
                 }
             }
+
         }
-    }
+            }
     
     //MARK: - Actions
     @objc func logOutUser(){
@@ -59,24 +86,58 @@ class MainFeedController: UICollectionViewController {
             print("Failed to Sign out")
         }
     }
-    @objc func refresh(){
+    @objc func createPost() {
+        var config = YPImagePickerConfiguration()
+        config.library.mediaType = .photo
+        config.shouldSaveNewPicturesToAlbum = false
+        config.startOnScreen = .library
+        config.screens = [.library]
+        config.hidesStatusBar = false
+        config.hidesBottomBar = false
+        config.library.maxNumberOfItems = 1
+        
+        let imagepicker = YPImagePicker(configuration: config)
+        imagepicker.modalPresentationStyle = .fullScreen
+        present(imagepicker, animated: true, completion: nil)
+        
+        pickedPhoto(imagepicker)
+    }
+    func pickedPhoto(_ imagePicker: YPImagePicker) {
+        imagePicker.didFinishPicking {[weak self] items, cancelled in
+            imagePicker.dismiss(animated: false) {
+                guard let selectedImage = items.singlePhoto?.image else { return }
+                
+                let vc = PostCreationController()
+                vc.delegate = self
+                vc.selectionImage = selectedImage
+                vc.user = self?.user
+                let navigation = UINavigationController(rootViewController: vc)
+                navigation.modalPresentationStyle = .fullScreen
+                self?.present(navigation, animated: false, completion: nil)
+            }
+        }
+    }
+    @objc func refreshAction(){
         usersPosts.removeAll()
         fetchPosts()
+        collectionView.refreshControl?.endRefreshing()
     }
     
     // MARK: - Helpers
     func configureUI() {
-        let refresher = UIRefreshControl()
-        refresher.addTarget(self, action: #selector(refresh), for: .valueChanged)
-        collectionView.backgroundColor = .white
+        refresh.addTarget(self, action: #selector(refreshAction), for: .valueChanged)
+        collectionView.refreshControl = refresh
+        collectionView.backgroundColor = .black
         collectionView.register(MainFeedCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-        collectionView.refreshControl = refresher
         if userPost == nil {
-            navigationItem.leftBarButtonItem = UIBarButtonItem(title: "LOg Out", style: .plain,
-                                                                target: self, action: #selector(logOutUser))
+            navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Log Out", style: .plain,
+                                                               target: self, action: #selector(logOutUser))
+            navigationItem.leftBarButtonItem?.tintColor = .white
+            navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "plus_unselected")?.withTintColor(.white, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(createPost))
         }
-        
+
         navigationItem.title = "Feed"
+        navigationController?.navigationBar.barTintColor = UIColor.black
     }
 }
 
@@ -113,16 +174,15 @@ extension MainFeedController: UICollectionViewDelegateFlowLayout {
 
 extension MainFeedController : MainFeedCellDelegate {
     func profileTapped(_ cell: MainFeedCell, uid: String) {
-        UserService.fetchUser(uid: uid) { user in
+        UserService.fetchUser(uid: uid) {[weak self] user in
             let vc = UserProfileController(user: user)
-            self.navigationController?.pushViewController(vc, animated: true)
+            self?.navigationController?.pushViewController(vc, animated: true)
         }
     }
     
     func postLikeTapped(_ cell: MainFeedCell, userPost: UserPost) {
         guard let tabBarCont = self.tabBarController as? TabBarController else {return}
         guard let user = tabBarCont.user else {return}
-        
         cell.viewModel?.userpost.didLike.toggle()
         if userPost.didLike {
             UserPostService.postUnliked(userPost: userPost) { error in
@@ -149,3 +209,11 @@ extension MainFeedController : MainFeedCellDelegate {
     
     
 }
+
+extension MainFeedController: PostCreationControllerDelegate {
+    func userPublishedPost(_ controller: PostCreationController) {
+        controller.dismiss(animated: true, completion: nil)
+        refreshAction()
+    }
+}
+

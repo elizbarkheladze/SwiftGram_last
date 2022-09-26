@@ -26,7 +26,9 @@ struct UserNotificationsService {
     static func fetchUserNotifications(completion: @escaping([NotificationModel]) -> Void) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         
-        COLLECTION_NOTIFICATIONS.document(uid).collection("userNotifications").getDocuments { snapshot, error in
+        let query = COLLECTION_NOTIFICATIONS.document(uid).collection("userNotifications").order(by: "time", descending: true)
+        
+        query.getDocuments { snapshot, error in
             if let error = error {
                 print("KAKA : \(error.localizedDescription)")
             }
